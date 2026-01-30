@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import Book from "../models/book.model.js"
 
+// Admin Controllers
+
 export const getBooks = async(req, res) => {
     
     try{
@@ -24,8 +26,7 @@ export const getBooks = async(req, res) => {
     } catch(err){
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error."
-        });
+            message: "Internal Server Error."});
     }
 }
 
@@ -60,39 +61,6 @@ export const postBook = async(req, res) => {
             success: false,
             message: "Internal Server Error."
         });
-    }
-}
-
-export const getBookById = async(req, res) => {
-    try{
-        const { id } = req.params;
-
-        if(!mongoose.Types.ObjectId.isValid(id)){
-            return res.status(400).json({
-                success: false, 
-                message: "Invalid ID"
-            })
-        }
-
-        const book = await Book.findById(id);
-
-        if(!book) {
-            return res.status(404).json({
-                success: false,
-                message: "Book Not Found."
-            });
-        }
-
-        return res.status(200).json({
-            success:true,
-            data: book
-        })
-
-    } catch(err) {
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error."
-        })
     }
 }
 
@@ -206,3 +174,39 @@ export const deleteBook = async (req, res) => {
         });
     }
 }
+
+// User Controllers
+
+export const getBookById = async(req, res) => {
+    try{
+        const { id } = req.params;
+
+        if(!mongoose.Types.ObjectId.isValid(id)){
+            return res.status(400).json({
+                success: false, 
+                message: "Invalid ID"
+            })
+        }
+
+        const book = await Book.findById(id);
+
+        if(!book) {
+            return res.status(404).json({
+                success: false,
+                message: "Book Not Found."
+            });
+        }
+
+        return res.status(200).json({
+            success:true,
+            data: book
+        })
+
+    } catch(err) {
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error."
+        })
+    }
+}
+

@@ -2,14 +2,33 @@
 import mongoose from "mongoose";
 
 const bookSchema = new mongoose.Schema({
-    title: String,          
-    author: String,         
-    description: String,    
-    coverImage: String,
+    title:{ 
+        type: String, 
+        required: true,
+        trim: true
+    },
+    author: {
+        type: String,
+        trim: true
+    },         
+    description: {
+        type: String,
+ 
+    },    
+    coverImage: {
+        type: String,
+    },
     genre: [String],        
-    language: String,       
-    pages: Number,          
-    publishedYear: Number
+    language: {
+        type: String,
+        required: true
+    },       
+    pages: {
+        type: String
+    },       
+    publishedYear: {
+        type: Number
+    }
 },{timestamps: true})
 
 
