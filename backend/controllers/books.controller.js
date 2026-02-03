@@ -45,11 +45,11 @@ export const postBook = async(req, res) => {
             publishedYear
           });
 
-        if(existingBook === req.body){
-            return res.json(409).json({message: "Book Already Exist."});
+        if(existingBook){
+            return res.status(409).json({message: "Book Already Exist."});
         }
 
-        const newBook = await Book.Create({title, author, description, coverImage, language, pages, publishedYear, genre});
+        const newBook = await Book.create({title, author, description, coverImage, language, pages, publishedYear, genre});
 
         return res.status(201).json({
             success: true,
@@ -149,22 +149,29 @@ export const deleteBook = async (req, res) => {
             })
         }
 
-        // check if book exist
+        // No, it is not entirely correct. There is a typo ("i//" should be "//"), and Book.deleteOne should be called with a filter object, not just the id.
+        // Here is the corrected version:
+
+        // The logic is mostly correct, but there are some RESTful and semantic improvements that could be made:
+        // 1. HTTP 204 (No Content) should not have a response body. If you want to send a message, use 200 or 202.
+        // 2. deleteOne returns a result object, not the deleted document; that's fine if you just want to confirm deletion.
+        // 3. Code is fine in terms of existence check and safety.
+        // Here is a slightly improved, more RESTful version:
+
+        // check if book exists
         const existingBook = await Book.findById(id);
-        if(!existingBook){
+        if (!existingBook) {
             return res.status(404).json({
                 success: false,
                 message: "Resource does not exist."
-            })
+            });
         }
 
         // delete Book
-        const deletedBook = await Book.deleteOne(id);
+        await Book.deleteOne({ _id: id });
 
-        return res.status(204).json({
-            success: true,
-            message: "Book successfully deleted."
-        })
+        // 204 No Content should not have a message, so we just end response here.
+        return res.status(204).end();
 
 
     } catch(err){

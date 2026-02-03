@@ -14,8 +14,12 @@ export const registerUser = async (req, res) => {
 
         const { name, email, password, role, avatar, createdAt, updatedAt } = req.body;
 
+        const now = new Date();
+        req.body.createdAt = now;
+        req.body.updatedAt = now;
+
         // check if any field is empty
-        if(!name || !email || !password || !role || !avatar || !createdAt || !updatedAt){
+        if(!name || !email || !password || !role || !avatar){
             return res.status(400).json({
                 success: false, 
                 message: "All fields are required to filled."
@@ -33,7 +37,8 @@ export const registerUser = async (req, res) => {
 
         const emailNormalized = email.toLowerCase();
 
-        if(password.length != 8 ){
+   
+        if(password.length < 8 ){
             return res.status(400).json({
                 success: false,
                 message: "Password must be at least 8 characters long."

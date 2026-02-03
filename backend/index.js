@@ -17,7 +17,7 @@ const app = express();
 // middlewares
 app.use(express.json());
 app.use("/api/v1/books/", bookRouter)
-app.use("/api/v1/user/", jwtAuthMiddleware, authRouter);
+app.use("/api/v1/users/", jwtAuthMiddleware, authRouter);
 app.use("/api/v1/user/", userRotuer);
 app.use("/api/v1/user/", adminRouter);
 
