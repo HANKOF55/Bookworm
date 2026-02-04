@@ -15,6 +15,15 @@ export const getBooks = async(req, res) => {
         const books = await Book.find()
           .skip(skip)
           .limit(limit);
+
+        
+        if(books.length === 0){
+            return res.status({
+                success: true,
+                message: "No books are registered yet.",
+                data: []
+            })
+        }
     
         return res.status(200).json({
           success: true,
