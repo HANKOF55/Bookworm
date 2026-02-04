@@ -4,7 +4,8 @@ import bcrypt from "bcrypt";
 
 
 // local modules
-import { generateToken } from "../middlewares/jwt.middleware.js";
+import { generateToken } from "../utils/jwt.utils.js";
+import mongoose from "mongoose";
 
 
 // User Controllers
@@ -95,10 +96,10 @@ export const loginUser = async(req, res) => {
 
         const emailNormalized = email.toLowerCase();
 
-        const user = await User.findOne({emailNormalized});
+        const user = await User.findOne({ email: emailNormalized }).select("+password");
 
-        if(!user || !(await bcrypt.compare(password))) { 
-            return res.status(404).json({
+        if(!user || !(await bcrypt.compare(password, user.password))) { 
+            return res.status(401).json({
                 success: false, 
                 message: "Invalid username or password."
             })
@@ -110,12 +111,24 @@ export const loginUser = async(req, res) => {
         }
 
         const token = generateToken(payload);
+        const refreshToken = generateRefreshToken(payload);
+
+        // Store refresh token in DB
+        User.refreshToken = refreshToken;
+        await user.save();
+
+         // send refresh token as HTTP-only cookie
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
 
         return res.status(200).json({
             success: true, 
             token
         })
-
 
     } catch(err){
         return res.status(500).json({
@@ -126,7 +139,31 @@ export const loginUser = async(req, res) => {
 }
 
 export const logOutUser = async(req, res) => {
-    res.send("logout");
+        try {
+          const userId = req.payloadData.id;
+      
+          await User.findByIdAndUpdate(userId, {
+            refreshToken: null
+          });
+      
+          res.clearCookie("refreshToken");
+      
+          return res.status(200).json({
+            success: true,
+            message: "Logged out successfully"
+          });
+      
+        } catch (err) {
+          return res.status(500).json(
+            { 
+                success: false, 
+                error: {
+                    message: "Internal server error.", 
+                    code: "INTERNAL_SERVER_ERROR"
+                } 
+            }
+        );
+        }   
 }
 
 // User Authenticated Controllers
@@ -137,7 +174,7 @@ export const getUserProfile = async(req, res) => {
 
         const userId = payload.id;
 
-        const user = await User.findOne(userId);
+        const user = await User.findOne({ _id: userId });
 
         if(!user) {
             return res.status(404).json({
@@ -167,20 +204,249 @@ export const getUserProfile = async(req, res) => {
 }
 
 export const patchUser = async(req, res) => {
-    res.send("Update User");
+    try{
+
+        const payload = req.payloadData;
+        const userId = payload.id;
+
+        if("role" in req.body){
+            return res.status(403).json({
+                success: false,
+                error:{
+                    message: "You are not allowed to update role.",
+                    code: "ROLE_UPDATE_FORBIDDEN"
+                }
+            })
+        }
+
+        if(Object.keys(req.body).length === 0){
+            return res.status(400).json({
+                success: false,
+                error: {
+                    message: "No fields provided for update", 
+                    code: "EMPTY_UPDATE"
+                }
+            });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            req.body,
+            { new: true }
+        )
+
+        if(!updatedUser){
+            return res.status(404).json({
+                success: false,
+                error:{
+                    message: "User not found.",
+                    code: "USER_NOT_FOUND"
+                }
+            });
+        }
+
+        return res.status(200).json({
+            success: true, 
+            user: updatedUser
+        })
+
+    } catch(err) {
+        return res.status(500).json({
+            success: false, 
+            error: {
+                message: "Internal Server error", 
+                code: "INTERNAL_SERVER_ERROR"
+            }
+        })
+    }
 }
+
 
 // Admin Controllers
 
-export const getUser = async(req, res) => {
-    res.send("get user here");
+export const getAllUsers = async(req, res) => {
+
+    try{
+        const payload = req.payloadData;
+        
+        const user = await User.findOne({ _id: payload.id });
+
+        if(!user){
+            return res.status(404).json({
+                success: false,
+                error: {
+                    message: "User not found.",
+                    code: "RESOURCE_NOT_FOUND"
+                }
+            })
+        }
+
+
+        if(user.role !== "admin"){
+            return res.status(403).json({
+                success: false,
+                error:{
+                    message: "You are not authorized to access this resource.",
+                    code: "FORBIDDEN"
+                }
+            })
+        }
+
+        const allUsers = await User.find();
+
+        return res.status(200).json({
+            success:true,
+            users: allUsers,
+        })
+
+
+    } catch(err) {
+        return res.status(500).json({
+            success:false,
+            errror: {
+                message : "Internal Server Error.",
+                code: "INTERNAL_SERVER_ERROR"
+            }
+        })
+    }
+}
+
+export const deleteUserById = async(req, res) => {
+    try{
+    
+        const deleteId = req.params.id;
+        const payload = req.payloadData;
+        
+        if (!mongoose.Types.ObjectId.isValid(deleteId)) {
+            return res.status(400).json({
+              success: false,
+              error: {
+                message: "Invalid user ID",
+                code: "INVALID_ID"
+              }
+            });
+          }
+
+        const adminUser = await User.findById(payload.id);
+
+        if(!adminUser) {
+            return res.status(404).json({
+                success: false,
+                error: {
+                    message: "User not found.",
+                    code: "USER_NOT_FOUND"
+                }
+            })
+        }
+
+        if(adminUser.role !== "admin"){
+            return res.status(403).json({
+                success: false,
+                error: {
+                    message: "You are not authorized to perform this action.",
+                    code: "FORBIDDEN"
+                }
+            })
+        }
+
+        const targetUser = await User.findById(deleteId);
+
+        if(!targetUser){
+            return res.status(404).json({
+                success: false,
+                error: {
+                    message: "Target user does not found.",
+                    code: "RESOURCE_NOT_FOUND"
+                }
+            })
+        }
+
+        await User.deleteOne({_id: deleteId});
+
+        return res.status(200).json({
+            success:true,
+            message: "Resource deleted successfully."
+        })
+        
+    } catch(err){
+        return res.status(500).json({
+            success: false,
+            error:{
+                message: "Internal server error.",
+                code: "INTERNAL_SERVER_ERROR"
+            }
+        })
+    }
+    
 }
 
 export const getUserById = async(req, res) => {
-    res.send("get user by Id");
+    try{
+
+        const targetUserId = req.params.id;
+        const payload = req.payloadData;
+
+        if(!mongoose.Types.ObjectId.isValid(targetUserId)){
+            return res.status(400).json({
+                success: false, 
+                error: {
+                    message: "Invalid User ID.",
+                    code: "INVALID_ID"
+                }
+            })
+        }
+
+        const adminUser = await User.findById(payload.id);
+
+        if(!adminUser){
+            return res.status(404).json({
+                success: false,
+                error: {
+                    message: "User not found.",
+                    code: "USER_NOT_FOUND"
+                }
+            })
+        }
+
+        if(adminUser.role !== "admin"){
+            return res.status(403).json({
+                success: false,
+                error: {
+                    message: "You are not authorized to access this resource.",
+                    code: "FORBIDDEN"
+                }
+            })
+        }
+
+        const targetUser = await User.findById(targetUserId);
+
+        if(!targetUser){
+            return res.status(404).json({
+                success: false,
+                error: {
+                    message: "User not found.",
+                    code: "RESOURCE_NOT_FOUND"
+                }
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: targetUser
+        })
+
+    } catch(err) {
+        return res.status(500).json({
+            success: false,
+            error: {
+                message: "Internal server error.",
+                code: "INTERNAL_SERVER_ERROR"
+            }
+        })
+    }
 }
 
-export const deleteUser = async(req, res) => {
-    res.send("delete User Here");
-}
+// export const deleteUser = async(req, res) => {
+//     res.send("delete User Here");
+// }
 

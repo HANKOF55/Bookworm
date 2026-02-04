@@ -4,11 +4,10 @@ import dotenv from "dotenv";
 
 // Local modules
 import connectDB from "./config/connection.db.js";
-import { jwtAuthMiddleware } from "./middlewares/jwt.middleware.js";
+import { jwtAuthMiddleware } from "./utils/jwt.utils.js";
 import bookRouter from "./routes/books.route.js";
-import authRouter from "./routes/auth.route.js";
 import userRotuer from "./routes/user.route.js";
-import adminRouter from "./routes/admin.route.js";
+import reviewRouter from "./routes/review.route.js";
 
 // configuration
 dotenv.config();
@@ -16,11 +15,9 @@ const app = express();
 
 // middlewares
 app.use(express.json());
-app.use("/api/v1/books/", bookRouter)
-app.use("/api/v1/users/", jwtAuthMiddleware, authRouter);
+app.use("/api/v1/books/", bookRouter);
 app.use("/api/v1/user/", userRotuer);
-app.use("/api/v1/user/", adminRouter);
-
+app.use("/api/v1/", reviewRouter);
 
 connectDB();
 const PORT = process.env.PORT

@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 export const jwtAuthMiddleware = (req, res, next) => {
 
     // check request header has authorization or not
-    const authorization = req.header.authorization;
+    const authorization = req.headers.authorization;
     if(!authorization) {
         return res.status(401).json({
             success: false, 
@@ -46,8 +46,16 @@ export const jwtAuthMiddleware = (req, res, next) => {
 export const generateToken = (userData) => {
 
     // Generating a new JWT token using user data
-    return jwt.sign({userData}, process.env.JWT_SECRET, {expiresIn:3000});
+    return jwt.sign({userData}, process.env.JWT_SECRET, {expiresIn:"60m"});
 }
+
+// Function for generating JWT Rfresh Token
+export const generateRefreshToken = (payload) => {
+
+    return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
+      expiresIn: "7d"
+    });
+  };
 
 
 
