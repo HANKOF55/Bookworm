@@ -15,8 +15,13 @@ const bookSchema = new mongoose.Schema({
         type: String,
  
     },    
+    coverImagePublicId: {   
+        type: String,
+        required: true
+      },
     coverImage: {
         type: String,
+        required: true
     },
     genre: [String],        
     language: {

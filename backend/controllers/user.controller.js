@@ -13,19 +13,18 @@ import mongoose from "mongoose";
 export const registerUser = async (req, res) => {
     try{
 
-        const { name, email, password, role, avatar, createdAt, updatedAt } = req.body;
+        const { name, email, password} = req.body;
 
-        const now = new Date();
-        req.body.createdAt = now;
-        req.body.updatedAt = now;
 
         // check if any field is empty
-        if(!name || !email || !password || !role || !avatar){
+        if(!name || !email || !password ){
             return res.status(400).json({
                 success: false, 
                 message: "All fields are required to filled."
             })
         }
+
+        const emailNormalized = email.toLowerCase();
 
         // checking if user already exist
         const existingUser = await User.findOne({email})
@@ -35,9 +34,6 @@ export const registerUser = async (req, res) => {
                 message: "User already exist."
             })
         }  
-
-        const emailNormalized = email.toLowerCase();
-
    
         if(password.length < 8 ){
             return res.status(400).json({
@@ -49,7 +45,15 @@ export const registerUser = async (req, res) => {
         // hashing password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const newUser = await User.create({name, email: emailNormalized, password: hashedPassword, role, createdAt, updatedAt})
+        let avatar = null;
+        let avatarPublicId = null;
+        if(req.file){
+            avatar = req.file.path;
+            avatarPublicId = req.file.filename;
+        }
+
+     
+        const newUser = await User.create({name, email: emailNormalized, password: hashedPassword, role:"user", avatar, avatarPublicId})
 
         // jwt payload
         const payload = {
@@ -59,6 +63,8 @@ export const registerUser = async (req, res) => {
 
         // generate new jwtToken
         const token = generateToken(payload);
+
+
 
         return res.status(201).json({
             user: {
@@ -219,7 +225,8 @@ export const patchUser = async(req, res) => {
             })
         }
 
-        if(Object.keys(req.body).length === 0){
+        // prevent empty updates
+        if(Object.keys(req.body).length === 0 && !req.file){
             return res.status(400).json({
                 success: false,
                 error: {
@@ -229,9 +236,23 @@ export const patchUser = async(req, res) => {
             });
         }
 
+        
+        const allowedFields = ["name", "email", "password"];
+        const updates = {};
+
+        for( const field of allowedFields ){
+            if(req.body[field] !== undefined){
+                updates[field] = req.body[field];
+            }
+        }
+
+        if (req.file){
+            updates.avatar = req.file.path; // cloudinary URL
+        }
+
         const updatedUser = await User.findByIdAndUpdate(
             userId,
-            req.body,
+            updates,
             { new: true }
         )
 
