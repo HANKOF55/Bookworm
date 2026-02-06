@@ -1,17 +1,20 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
-import { BrowserRouter } from 'react-router-dom'
-import {HeroUIProvider} from "@heroui/react";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import App from "./App.jsx";
+import { BrowserRouter } from "react-router-dom";
+import { HeroUIProvider } from "@heroui/react";
+import { Provider } from "react-redux";
+import { store } from "./store/store.js";
 
-
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter>
-      <HeroUIProvider>
-        <App />
-      </HeroUIProvider>
-    </BrowserRouter>
+    <Provider store={store}>
+      <BrowserRouter>
+        <HeroUIProvider>
+          <App />
+        </HeroUIProvider>
+      </BrowserRouter>
+    </Provider>
   </StrictMode>,
-)
+);

@@ -1,4 +1,4 @@
-import heroImage from "../../assets/Hero.png";
+import heroImage from "../../assets/images/Hero.png";
 import {Button} from "@heroui/react";
 
 const HeroSection = () => {

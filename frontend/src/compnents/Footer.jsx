@@ -1,4 +1,4 @@
-import bookwormLogo from "../assets/BookwormLogo.png";
+import bookwormLogo from "../assets/images/BookwormLogo.png";
 import { Instagram, Twitter, Linkedin, Github} from "lucide-react";
 import { NavLink } from "react-router-dom";
 

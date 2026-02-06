@@ -27,7 +27,7 @@ export const registerUser = async (req, res) => {
         const emailNormalized = email.toLowerCase();
 
         // checking if user already exist
-        const existingUser = await User.findOne({email})
+        const existingUser = await User.findOne({ email: emailNormalized });
         if(existingUser) {
             return res.status(409).json({
                 success: false, 
@@ -53,7 +53,7 @@ export const registerUser = async (req, res) => {
         }
 
      
-        const newUser = await User.create({name, email: emailNormalized, password: hashedPassword, role:"user", avatar, avatarPublicId})
+        const newUser = await User.create({name, email: emailNormalized, password: hashedPassword, role:"admin", avatar, avatarPublicId})
 
         // jwt payload
         const payload = {
@@ -121,7 +121,6 @@ export const loginUser = async(req, res) => {
 
         // Store refresh token in DB
         User.refreshToken = refreshToken;
-        await user.save();
 
          // send refresh token as HTTP-only cookie
         res.cookie("refreshToken", refreshToken, {

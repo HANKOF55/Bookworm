@@ -1,11 +1,12 @@
 import About from "./aboutPage/About";
 import Contact from "./contactPage/Contact";
 import Home from "./homePage/Home";
-import Shop from "./ShopPage/Shop";
+import ShopPage from "./ShopPage/ShopPage";
+
 
 export {
     Home,
-    Shop, 
+    ShopPage, 
     Contact, 
     About
 }

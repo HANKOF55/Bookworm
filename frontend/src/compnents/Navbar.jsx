@@ -7,7 +7,8 @@ import {
   Button,
 } from "@heroui/react";
 import { NavLink } from "react-router-dom";
-import bookwormLogo from "../assets/BookwormLogo.png";
+import bookwormLogo from "../assets/images/BookwormLogo.png";
+import Modal from "./modal";
 
 export default function App() {
   const navItems = ["home", "shop", "contact", "about"];
@@ -42,12 +43,9 @@ export default function App() {
 
       <NavbarContent justify="end">
         <NavbarItem className="hidden lg:flex">
-          <Link href="#">Login</Link>
         </NavbarItem>
         <NavbarItem>
-          <Button as={Link} color="primary" href="#" variant="flat">
-            Sign Up
-          </Button>
+          <Modal modalName="Sign Up" />
         </NavbarItem>
       </NavbarContent>
     </Navbar>
