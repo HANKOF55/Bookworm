@@ -15,13 +15,14 @@ import cartRouter from "./routes/cart.route.js";
 dotenv.config();
 const app = express();
 app.use(cors({
-    orgiin: "http://localhost:5173"
+    origin: "http://localhost:5173",
+    credentials: true,
 }));
 
 
 // middlewares
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 app.use("/api/v1/books/", bookRouter);
 app.use("/api/v1/user/", userRotuer);
 app.use("/api/v1/", reviewRouter);

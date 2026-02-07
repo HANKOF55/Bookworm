@@ -1,18 +1,60 @@
 import BookwormLogo from "../assets/images/BookwormLogo.png";
 import { useState } from "react";
 import { Eye, EyeClosed } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../store/features/authSlice"
+import api from "../api/axios";
 
-const Login = ({handleShowSignUp}) => {
+const Login = ({ handleShowSignUp }) => {
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+  const dispatch = useDispatch()
+  const navigate = useNavigate();
 
-    const [showPassword, setShowPassWord] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassWord] = useState(false);
 
-    const handleShowPassword = (e) =>{
-        e.preventDefault()
-        setShowPassWord((prev) => !prev)
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    setIsSuccess(false);
+    setError(null);
+    setIsLoading(true);
+
+    try {
+
+      const payload = { email, password };
+
+      const res = await api.post("/user/login", payload);
+      setIsSuccess(res.data?.success);
+
+      const token = res.data?.token;
+      const user = res.data?.user;
+
+      localStorage.setItem("accessToken", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      dispatch(loginSuccess({ user: user }));
+
+    } catch (err) {
+      setError("Login failed.");
+    } finally {
+      setIsLoading(false)
     }
+
+    
+  }
+
+  const handleShowPassword = (e) => {
+    e.preventDefault()
+    setShowPassWord((prev) => !prev)
+  }
 
   return (
     <>
@@ -24,7 +66,7 @@ const Login = ({handleShowSignUp}) => {
           </header>
         </div>
 
-        <form className="flex flex-col gap-4 w-full max-w-sm mt-4 mx-auto">
+        <form className="flex flex-col gap-4 w-full max-w-sm mt-4 mx-auto" onSubmit={handleSubmit}>
           <div className="flex flex-col">
             <label className="text-gray-700 mb-1" htmlFor="email">
               Email
@@ -85,6 +127,10 @@ const Login = ({handleShowSignUp}) => {
           >
             Don't have an account?
           </button>
+
+          {error && <p className="text-red-600 text-sm text-center font-medium">{error}</p>}
+          {isSuccess && <p className="text-green-600 text-sm text-center font-medium">Login successful!</p>}
+
         </form>
       </div>
     </>

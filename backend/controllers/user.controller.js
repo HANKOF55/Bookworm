@@ -4,111 +4,95 @@ import bcrypt from "bcrypt";
 
 
 // local modules
-import { generateToken } from "../utils/jwt.utils.js";
+import { generateToken, generateRefreshToken } from "../utils/jwt.utils.js";
 import mongoose from "mongoose";
 
 
 // User Controllers
 
 export const registerUser = async (req, res) => {
-    try{
+    try {
+        const { name, email, password } = req.body;
 
-        const { name, email, password} = req.body;
-
-
-        // check if any field is empty
-        if(!name || !email || !password ){
+        if (!name || !email || !password) {
             return res.status(400).json({
-                success: false, 
-                message: "All fields are required to filled."
-            })
+                success: false,
+                message: "All fields are required"
+            });
         }
 
         const emailNormalized = email.toLowerCase();
 
-        // checking if user already exist
         const existingUser = await User.findOne({ email: emailNormalized });
-        if(existingUser) {
+        if (existingUser) {
             return res.status(409).json({
-                success: false, 
-                message: "User already exist."
-            })
-        }  
-   
-        if(password.length < 8 ){
+                success: false,
+                message: "User already exists"
+            });
+        }
+
+        if (password.length < 8) {
             return res.status(400).json({
                 success: false,
-                message: "Password must be at least 8 characters long."
-            })
+                message: "Password must be at least 8 characters long"
+            });
         }
 
-        // hashing password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        let avatar = null;
-        let avatarPublicId = null;
-        if(req.file){
-            avatar = req.file.path;
-            avatarPublicId = req.file.filename;
-        }
+        const newUser = await User.create({
+            name,
+            email: emailNormalized,
+            password: hashedPassword,
+            role: "user"
+        });
 
-     
-        const newUser = await User.create({name, email: emailNormalized, password: hashedPassword, role:"admin", avatar, avatarPublicId})
-
-        // jwt payload
-        const payload = {
+        const token = generateToken({
             id: newUser._id,
             email: newUser.email
-        }
-
-        // generate new jwtToken
-        const token = generateToken(payload);
-
-
+        });
 
         return res.status(201).json({
             user: {
-            id: newUser._id,
-            name: newUser.name,
-            email: newUser.email,
-            role: newUser.role, 
-            avatar: newUser.avatar, 
-            createdAt: newUser.createdAt,
-            updatedAt: newUser.updatedAt,
+                id: newUser._id,
+                name: newUser.name,
+                email: newUser.email,
+                role: newUser.role,
+                createdAt: newUser.createdAt
             },
             token
-        })
-
-
-    } catch(err) {
+        });
+    } catch (err) {
         return res.status(500).json({
-            success: false, 
-            message: "Internal Server Error."
-        })
+            success: false,
+            message: "Internal Server Error"
+        });
     }
-}
+};
 
-export const loginUser = async(req, res) => {
-    try{
 
+export const loginUser = async (req, res) => {
+    try {
         const { email, password } = req.body;
 
-        if(!email || !password){
+        if (!email || !password) {
             return res.status(400).json({
-                success: false, 
+                success: false,
                 message: "Please fill the required fields."
-            })
+            });
         }
 
         const emailNormalized = email.toLowerCase();
 
-        const user = await User.findOne({ email: emailNormalized }).select("+password");
+        // Explicitly select password so password is present for comparison,
+        // select name and role to send to client, exclude __v and other unnecessary fields.
+        const user = await User.findOne({ email: emailNormalized }).select("+password name role email");
 
-        if(!user || !(await bcrypt.compare(password, user.password))) { 
+        if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({
-                success: false, 
+                success: false,
                 message: "Invalid username or password."
-            })
+            });
         }
 
         const payload = {
@@ -117,25 +101,31 @@ export const loginUser = async(req, res) => {
         }
 
         const token = generateToken(payload);
-        const refreshToken = generateRefreshToken(payload);
+        // const refreshToken = generateRefreshToken(payload);
 
-        // Store refresh token in DB
-        User.refreshToken = refreshToken;
 
-         // send refresh token as HTTP-only cookie
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+        // // Store refresh token in DB for this user
+        // user.refreshToken = refreshToken;
+        // await user.save();
+
+        // // send refresh token as HTTP-only cookie
+        // res.cookie("refreshToken", refreshToken, {
+        //     httpOnly: true,
+        //     secure: true,
+        //     sameSite: "strict",
+        //     maxAge: 7 * 24 * 60 * 60 * 1000
+        // });
 
         return res.status(200).json({
-            success: true, 
-            token
-        })
+            success: true,
+            token,
+            user: {
+                name: user.name,
+                role: user.role
+            }
+        });
 
-    } catch(err){
+    } catch (err) {
         return res.status(500).json({
             success: false,
             message: "Internal Server Error."
@@ -143,45 +133,102 @@ export const loginUser = async(req, res) => {
     }
 }
 
-export const logOutUser = async(req, res) => {
-        try {
-          const userId = req.payloadData.id;
-      
-          await User.findByIdAndUpdate(userId, {
+export const getMe = async (req, res) => {
+    try {
+        // Check if payloadData exists and has an id
+        const payload = req.payloadData;
+        if (!payload || !payload.id) {
+            return res.status(401).json({
+                success: false,
+                error: {
+                    message: "Invalid or missing authorization payload.",
+                    code: "INVALID_TOKEN_PAYLOAD"
+                }
+            });
+        }
+
+        const userId = payload.id;
+
+        // Validate userId format (MongoDB ObjectId)
+        if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    message: "Invalid user ID.",
+                    code: "INVALID_USER_ID"
+                }
+            });
+        }
+
+        const user = await User.findById(userId).select("-refreshToken -password");
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: {
+                    message: "User not found.",
+                    code: "USER_NOT_FOUND"
+                }
+            });
+        }
+
+        // Make sure to send a plain object (not Mongoose model) if needed
+        return res.status(200).json({
+            success: true,
+            data: user.toObject ? user.toObject() : user
+        });
+
+    } catch (err) {
+        console.error("Error in getMe:", err);
+        return res.status(500).json({
+            success: false,
+            error: {
+                message: err.message || "Internal server error.",
+                code: "INTERNAL_SERVER_ERROR"
+            }
+        });
+    }
+}
+
+export const logOutUser = async (req, res) => {
+    try {
+        const userId = req.payloadData.id;
+
+        await User.findByIdAndUpdate(userId, {
             refreshToken: null
-          });
-      
-          res.clearCookie("refreshToken");
-      
-          return res.status(200).json({
+        });
+
+        res.clearCookie("refreshToken");
+
+        return res.status(200).json({
             success: true,
             message: "Logged out successfully"
-          });
-      
-        } catch (err) {
-          return res.status(500).json(
-            { 
-                success: false, 
+        });
+
+    } catch (err) {
+        return res.status(500).json(
+            {
+                success: false,
                 error: {
-                    message: "Internal server error.", 
+                    message: "Internal server error.",
                     code: "INTERNAL_SERVER_ERROR"
-                } 
+                }
             }
         );
-        }   
+    }
 }
 
 // User Authenticated Controllers
 
-export const getUserProfile = async(req, res) => {
-    try{
+export const getUserProfile = async (req, res) => {
+    try {
         const payload = req.payloadData;
 
         const userId = payload.id;
 
         const user = await User.findOne({ _id: userId });
 
-        if(!user) {
+        if (!user) {
             return res.status(404).json({
                 success: false,
                 error: {
@@ -192,12 +239,12 @@ export const getUserProfile = async(req, res) => {
         }
 
         return res.status(200).json({
-            success:true,
-            user: user
+            success: true,
+            data: user
         })
-        
 
-    } catch(err){
+
+    } catch (err) {
         return res.status(500).json({
             success: false,
             error: {
@@ -208,16 +255,36 @@ export const getUserProfile = async(req, res) => {
     }
 }
 
-export const patchUser = async(req, res) => {
-    try{
+export const patchUser = async (req, res) => {
+    try {
 
         const payload = req.payloadData;
-        const userId = payload.id;
+        const userId = payload?.id ?? payload?.userData?.id;
 
-        if("role" in req.body){
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                error: {
+                    message: "Invalid or missing authorization payload.",
+                    code: "INVALID_PAYLOAD"
+                }
+            });
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    message: "Invalid user ID.",
+                    code: "INVALID_ID"
+                }
+            });
+        }
+
+        if ("role" in req.body) {
             return res.status(403).json({
                 success: false,
-                error:{
+                error: {
                     message: "You are not allowed to update role.",
                     code: "ROLE_UPDATE_FORBIDDEN"
                 }
@@ -225,40 +292,45 @@ export const patchUser = async(req, res) => {
         }
 
         // prevent empty updates
-        if(Object.keys(req.body).length === 0 && !req.file){
+        if (Object.keys(req.body).length === 0) {
             return res.status(400).json({
                 success: false,
                 error: {
-                    message: "No fields provided for update", 
+                    message: "No fields provided for update",
                     code: "EMPTY_UPDATE"
                 }
             });
         }
 
-        
+
         const allowedFields = ["name", "email", "password"];
         const updates = {};
 
-        for( const field of allowedFields ){
-            if(req.body[field] !== undefined){
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
                 updates[field] = req.body[field];
             }
         }
 
-        if (req.file){
-            updates.avatar = req.file.path; // cloudinary URL
+        if (updates.password) {
+            updates.password = await bcrypt.hash(updates.password, 10);
+        }
+
+        if (updates.email) {
+            updates.email = updates.email.toLowerCase().trim();
         }
 
         const updatedUser = await User.findByIdAndUpdate(
             userId,
             updates,
-            { new: true }
+            { new: true, runValidators: true }
         )
+            .select("-password");
 
-        if(!updatedUser){
+        if (!updatedUser) {
             return res.status(404).json({
                 success: false,
-                error:{
+                error: {
                     message: "User not found.",
                     code: "USER_NOT_FOUND"
                 }
@@ -266,32 +338,32 @@ export const patchUser = async(req, res) => {
         }
 
         return res.status(200).json({
-            success: true, 
+            success: true,
             user: updatedUser
         })
 
-    } catch(err) {
+    } catch (err) {
         return res.status(500).json({
-            success: false, 
+            success: false,
             error: {
-                message: "Internal Server error", 
-                code: "INTERNAL_SERVER_ERROR"
+                message: "Internal Server error",
+                code: "INTERNAL_SERVER_ERROR",
             }
-        })
+        });
     }
 }
 
 
 // Admin Controllers
 
-export const getAllUsers = async(req, res) => {
+export const getAllUsers = async (req, res) => {
 
-    try{
+    try {
         const payload = req.payloadData;
-        
+
         const user = await User.findOne({ _id: payload.id });
 
-        if(!user){
+        if (!user) {
             return res.status(404).json({
                 success: false,
                 error: {
@@ -302,10 +374,10 @@ export const getAllUsers = async(req, res) => {
         }
 
 
-        if(user.role !== "admin"){
+        if (user.role !== "admin") {
             return res.status(403).json({
                 success: false,
-                error:{
+                error: {
                     message: "You are not authorized to access this resource.",
                     code: "FORBIDDEN"
                 }
@@ -315,41 +387,41 @@ export const getAllUsers = async(req, res) => {
         const allUsers = await User.find();
 
         return res.status(200).json({
-            success:true,
+            success: true,
             users: allUsers,
         })
 
 
-    } catch(err) {
+    } catch (err) {
         return res.status(500).json({
-            success:false,
+            success: false,
             errror: {
-                message : "Internal Server Error.",
+                message: "Internal Server Error.",
                 code: "INTERNAL_SERVER_ERROR"
             }
         })
     }
 }
 
-export const deleteUserById = async(req, res) => {
-    try{
-    
+export const deleteUserById = async (req, res) => {
+    try {
+
         const deleteId = req.params.id;
         const payload = req.payloadData;
-        
+
         if (!mongoose.Types.ObjectId.isValid(deleteId)) {
             return res.status(400).json({
-              success: false,
-              error: {
-                message: "Invalid user ID",
-                code: "INVALID_ID"
-              }
+                success: false,
+                error: {
+                    message: "Invalid user ID",
+                    code: "INVALID_ID"
+                }
             });
-          }
+        }
 
         const adminUser = await User.findById(payload.id);
 
-        if(!adminUser) {
+        if (!adminUser) {
             return res.status(404).json({
                 success: false,
                 error: {
@@ -359,7 +431,7 @@ export const deleteUserById = async(req, res) => {
             })
         }
 
-        if(adminUser.role !== "admin"){
+        if (adminUser.role !== "admin") {
             return res.status(403).json({
                 success: false,
                 error: {
@@ -371,7 +443,7 @@ export const deleteUserById = async(req, res) => {
 
         const targetUser = await User.findById(deleteId);
 
-        if(!targetUser){
+        if (!targetUser) {
             return res.status(404).json({
                 success: false,
                 error: {
@@ -381,34 +453,34 @@ export const deleteUserById = async(req, res) => {
             })
         }
 
-        await User.deleteOne({_id: deleteId});
+        await User.deleteOne({ _id: deleteId });
 
         return res.status(200).json({
-            success:true,
+            success: true,
             message: "Resource deleted successfully."
         })
-        
-    } catch(err){
+
+    } catch (err) {
         return res.status(500).json({
             success: false,
-            error:{
+            error: {
                 message: "Internal server error.",
                 code: "INTERNAL_SERVER_ERROR"
             }
         })
     }
-    
+
 }
 
-export const getUserById = async(req, res) => {
-    try{
+export const getUserById = async (req, res) => {
+    try {
 
         const targetUserId = req.params.id;
         const payload = req.payloadData;
 
-        if(!mongoose.Types.ObjectId.isValid(targetUserId)){
+        if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
             return res.status(400).json({
-                success: false, 
+                success: false,
                 error: {
                     message: "Invalid User ID.",
                     code: "INVALID_ID"
@@ -418,7 +490,7 @@ export const getUserById = async(req, res) => {
 
         const adminUser = await User.findById(payload.id);
 
-        if(!adminUser){
+        if (!adminUser) {
             return res.status(404).json({
                 success: false,
                 error: {
@@ -428,7 +500,7 @@ export const getUserById = async(req, res) => {
             })
         }
 
-        if(adminUser.role !== "admin"){
+        if (adminUser.role !== "admin") {
             return res.status(403).json({
                 success: false,
                 error: {
@@ -440,7 +512,7 @@ export const getUserById = async(req, res) => {
 
         const targetUser = await User.findById(targetUserId);
 
-        if(!targetUser){
+        if (!targetUser) {
             return res.status(404).json({
                 success: false,
                 error: {
@@ -455,7 +527,7 @@ export const getUserById = async(req, res) => {
             data: targetUser
         })
 
-    } catch(err) {
+    } catch (err) {
         return res.status(500).json({
             success: false,
             error: {
