@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../../api/axios";
 import { Link } from "react-router-dom";
+import { Book } from "lucide-react";
 
 const DELIVERY_FEE = 50;
 
@@ -113,8 +114,42 @@ const ShoppingCart = () => {
     }
   };
 
-  const handleCheckout = () => {
-    window.location.href = "/checkout";
+  // NEW: handleCheckout now works for complete cart, not a single product
+  const handleCheckout = async () => {
+    try {
+      if (cartItems.length === 0) {
+        setError("Your cart is empty.");
+        return;
+      }
+
+      // Compose products array for payment
+      const products = cartItems.map((item) => ({
+        name: item.title,
+        image: item.image,
+        price: item.price,
+        quantity: item.quantity,
+      }));
+
+      const res = await api.post("/payment", {
+        products, // send all products in the cart
+        deliveryFee: DELIVERY_FEE,
+        subtotal,
+        total,
+      });
+
+      if (res.data?.success && res.data?.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = res.data.url;
+      } else {
+        throw new Error("Invalid checkout response");
+      }
+
+    } catch (err) {
+      setError(
+        "Checkout failed: " +
+        (err.response?.data?.error?.message || err.message)
+      );
+    }
   };
 
   // Calculate totals
@@ -324,7 +359,9 @@ const ShoppingCart = () => {
                 {/* Checkout Button */}
                 <button
                   onClick={handleCheckout}
-                  className="w-full px-6 py-3 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+                  className="w-full px-6 py-3 hover:cursor-pointer bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+                  disabled={cartItems.length === 0}
+                  title={cartItems.length === 0 ? "Cart is empty" : ""}
                 >
                   Checkout Now
                 </button>

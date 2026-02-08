@@ -3,7 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { loginSuccess, logout } from "./store/features/authSlice";
 import Layout from "./Layout/Layout";
-import { Home, ShopPage, About, Contact, ShoppingCart } from "./pages/exports.pages";
+import { Home, ShopPage, ShoppingCart } from "./pages/exports.pages";
 import Profile from "./pages/userDashBoard/Profile";
 import Books from "./pages/userDashBoard/Books";
 import CreateBook from "./pages/userDashBoard/CreateBook";
@@ -14,6 +14,8 @@ import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
 import ViewUser from "./pages/userDashBoard/ViewUser";
 import ViewBook from "./pages/userDashBoard/ViewBook";
 import BookDetails from "./pages/ShopPage/BookDetails";
+import Success from "./pages/success/Success";
+import Cancel from "./pages/cancel/Cancel";
 import api from "./api/axios";
 
 function App() {
@@ -53,21 +55,21 @@ function App() {
         <Route index element={<Home />} />
         <Route index path="/home" element={<Home />} />
         <Route path="shop" element={<ShopPage />} />
-        <Route path="shop/:bookId" element={<BookDetails/>}/>
-        {/* <Route path="about" element={<About />} /> */}
-        {/* <Route path="contact" element={<Contact />} /> */}
+        <Route path="shop/:bookId" element={<BookDetails />} />
         <Route path="userDashBoard" element={<DashboardOutlet />}>
           <Route index element={<Profile />} />
           <Route path="profile" element={<Profile />} />
           <Route path="editProfile" element={<EditPage />} />
           <Route path="books" element={<Books />} />
-          <Route path="books/:bookId" element={<ViewBook/>} />
+          <Route path="books/:bookId" element={<ViewBook />} />
           <Route path="addBook" element={<CreateBook />} />
           <Route path="users" element={<Users />} />
           <Route path="users/:userId" element={<ViewUser />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
         <Route path="shoppingCart" element={<ShoppingCart />} />
+        <Route path="/success" element={<Success />} />
+        <Route path="/cancel" element={<Cancel />} />
       </Route>
     </Routes>
   )
