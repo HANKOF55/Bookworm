@@ -1,13 +1,19 @@
-import { Card, CardBody, CardFooter, Image, Button } from "@heroui/react";
+import { Card, CardBody, CardFooter, Image, Button, Pagination } from "@heroui/react";
 import { useState, useEffect } from "react";
 import api from "../../api/axios";
 import { Link } from "react-router-dom";
+// import handleAddToCart from "../shoppingCartPage/handleAddToCart";
 // import books from "./book.js"
+import handleAddToCart from "../shoppingCartPage/handleAddToCart";
 
 
 const ProductSection = () => {
 
   const [books, setBooks] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const limit = 10;
+
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,18 +27,25 @@ const ProductSection = () => {
 
   useEffect(() => {
 
-    const fetchBooks = async () => {
+    const fetchBooks = async (page) => {
       try {
         setSuccess(false);
         setError(null);
         setIsLoading(true);
+
+        const skip = (page - 1) * limit;
   
-        const res = await api.get("/books");
+        const res = await api.get("/books", {
+          params: {
+            skip, 
+            limit
+          }
+        });
   
         if (res.data?.success) {
           setSuccess(res.data?.success);
           setBooks(res.data?.data);
-          console.log(res.data?.data);
+          setHasMore(res.data?.hasMore);
         }
 
 
@@ -51,14 +64,36 @@ const ProductSection = () => {
       }
     }
   
-    fetchBooks();
+    fetchBooks(page);
 
-  }, []);
+  }, [page]);
 
+
+  // const handleAddToCart = async (bookId) => {
+  //   try {
+  //     const res = await api.post("/cart", {
+  //       bookId,
+  //       quantity: 1
+  //     });
+  
+  //     if (res.data?.success) {
+  //       console.log("Added to cart", res.data.data);
+  //     }
+  //   } catch (err) {
+  //     console.error(
+  //       err.response?.data?.error?.message ||
+  //       "Failed to add item to cart"
+  //     );
+  //   }
+  // };
+  
 
 
   return (
     <>
+    <section className="w-full">
+
+
       <section className="container mx-auto max-w-[1080px] my-10 flex justify-center">
 
         <div >
@@ -129,6 +164,7 @@ const ProductSection = () => {
               className="font-semibold h-8 px-4 bg-green-500 text-white rounded-full hover:bg-green-700 hover:cursor-pointer transition-colors"
               title="Add to cart"
               type="button"
+              onClick={() => handleAddToCart(book._id)}
             >
               Add to Cart
             </button>
@@ -141,6 +177,28 @@ const ProductSection = () => {
 </div>
 
         </div>
+      </section>
+
+      <div className="flex gap-2 justify-center items-center mt-10 mb-10">
+  <button
+  className="bg-blue-500 border-none rounded-md text-white font-semibold px-2 hover:bg-blue-600 hover:cursor-pointer"
+    disabled={page === 1}
+    onClick={() => setPage((p) => p - 1)}
+  >
+    Prev
+  </button>
+
+  <span className="text-md font-semibold">Page {page}</span>
+
+  <button
+    className="bg-blue-500 border-none rounded-md text-white font-semibold px-2 hover:bg-blue-600 hover:cursor-pointer"
+    disabled={!hasMore}
+    onClick={() => setPage((p) => p + 1)}
+  >
+    Next
+  </button>
+</div>
+
 
       </section>
     </>

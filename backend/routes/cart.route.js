@@ -1,8 +1,9 @@
 // core modules
 import express from "express";
+// import { jwtAuthMiddleware } from "../utils/jwt.utils.js";
 
 // local modules
-import { getMyCart, postCartItem, removeCartItem, clearCart} from "../controllers/cart.controller.js";
+import { getMyCart, postCartItem, removeCartItem, clearCart } from "../controllers/cart.controller.js";
 
 // router instance
 const cartRouter = express.Router();

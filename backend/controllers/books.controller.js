@@ -348,11 +348,15 @@ export const getBooks = async (req, res) => {
             })
         }
 
+        const total = await Book.countDocuments();
+        const hasMore = (skip + limit) < total
+
         return res.status(200).json({
             success: true,
             count: books.length,
-            page,  //returning page to let frontend know the current page
+            page,
             data: books,
+            hasMore
         });
 
     } catch (err) {
