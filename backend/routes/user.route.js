@@ -2,7 +2,7 @@
 import express from "express";
 
 // local moduels
-import { registerUser, loginUser, logOutUser, getUserProfile, patchUser, getAllUsers, getUserById, deleteUserById, getMe } from "../controllers/user.controller.js";
+import { registerUser, loginUser, logOutUser, getUserProfile, patchUser, getAllUsers, getUserById, deleteUserById, getMe, updateUserById } from "../controllers/user.controller.js";
 
 import { jwtAuthMiddleware } from "../utils/jwt.utils.js";
 
@@ -23,5 +23,6 @@ userRouter.get("/me", jwtAuthMiddleware, getMe);
 userRouter.get("/", jwtAuthMiddleware, getAllUsers);
 userRouter.get("/:id", jwtAuthMiddleware, getUserById);
 userRouter.delete("/:id", jwtAuthMiddleware, deleteUserById);
+userRouter.patch("/:id", jwtAuthMiddleware, updateUserById)
 
 export default userRouter;

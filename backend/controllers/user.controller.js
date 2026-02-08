@@ -12,7 +12,7 @@ import mongoose from "mongoose";
 
 export const registerUser = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, avatar } = req.body;
 
         if (!name || !email || !password) {
             return res.status(400).json({
@@ -44,6 +44,7 @@ export const registerUser = async (req, res) => {
             name,
             email: emailNormalized,
             password: hashedPassword,
+            avatar,
             role: "user"
         });
 
@@ -538,7 +539,87 @@ export const getUserById = async (req, res) => {
     }
 }
 
-// export const deleteUser = async(req, res) => {
-//     res.send("delete User Here");
-// }
 
+export const updateUserById = async (req, res) => {
+  try {
+    const targetUserId = req.params.id;
+    const payload = req.payloadData;
+
+    const { avatar, name, email, role } = req.body;
+
+    // ✅ Validate target user ID
+    if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: "Invalid User ID.",
+          code: "INVALID_ID"
+        }
+      });
+    }
+
+    
+    const adminUser = await User.findById(payload.id);
+
+    if (!adminUser) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: "User not found.",
+          code: "USER_NOT_FOUND"
+        }
+      });
+    }
+
+    
+    if (adminUser.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: "You are not authorized to update this user.",
+          code: "FORBIDDEN"
+        }
+      });
+    }
+
+    
+    const targetUser = await User.findById(targetUserId);
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: "User not found.",
+          code: "RESOURCE_NOT_FOUND"
+        }
+      });
+    }
+
+    
+    if (avatar !== undefined) targetUser.avatar = avatar;
+    if (name !== undefined) targetUser.name = name;
+    if (email !== undefined) targetUser.email = email;
+    if (role !== undefined) targetUser.role = role;
+
+    targetUser.updatedAt = new Date();
+
+    await targetUser.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "User updated successfully.",
+      data: targetUser
+    });
+
+  } catch (err) {
+    console.error("UPDATE USER ERROR", err);
+
+    return res.status(500).json({
+      success: false,
+      error: {
+        message: "Internal server error.",
+        code: "INTERNAL_SERVER_ERROR"
+      }
+    });
+  }
+};

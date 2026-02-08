@@ -8,6 +8,7 @@ const SignUp = ({ handleShowSignUp }) => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [avatar, setAvatar] = useState("");
     const [showPassword, setShowPassWord] = useState(false);
 
     const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +24,7 @@ const SignUp = ({ handleShowSignUp }) => {
 
         try {
 
-            const payload = { name, email, password };
+            const payload = { name, email, password, avatar};
 
             api.post("/user/register", payload);
 
@@ -32,6 +33,7 @@ const SignUp = ({ handleShowSignUp }) => {
             setName("");
             setEmail("");
             setPassword("");
+            setAvatar("");
 
         } catch (err) {
             setError("Registration failed.");
@@ -92,18 +94,25 @@ const SignUp = ({ handleShowSignUp }) => {
                         />
                     </div>
 
-                    {/* <div className="flex flex-col">
-                <label className="text-gray-700 mb-1" htmlFor="avatar">
-                Avatar
-                </label>
-                <input
-                type="file"
-                id="avatar"
-                name="avatar"
-                accept="image/*"
-                className="border px-3 py-2 rounded focus:outline-none"
-                />
-            </div> */}
+                    <div className="flex flex-col">
+                        <label className="text-gray-700 mb-1" htmlFor="email">
+                            Avatar
+                        </label>
+                        <input
+                            type="text"
+                            id="avatar"
+                            name="avatar"
+                            onChange={(e) => {
+                                setAvatar(e.target.value)
+                            }}
+                            value={avatar}
+                            placeholder="Paste url here"
+                            className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-orange-200"
+                            required
+                        />
+                    </div>
+
+                   
 
                     <div className="flex flex-col">
                         <label className="text-gray-700 mb-1" htmlFor="password">

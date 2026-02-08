@@ -12,6 +12,7 @@ import EditPage from "./pages/userDashBoard/EditPage";
 import Users from "./pages/userDashBoard/Users";
 import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
 import ViewUser from "./pages/userDashBoard/ViewUser";
+import ViewBook from "./pages/userDashBoard/ViewBook";
 import api from "./api/axios";
 
 function App() {
@@ -58,10 +59,10 @@ function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="editProfile" element={<EditPage />} />
           <Route path="books" element={<Books />} />
+          <Route path="books/:bookId" element={<ViewBook/>} />
           <Route path="addBook" element={<CreateBook />} />
-          <Route path="users" element={<Users />}>
-            {/* <Route path="/:userId" element={<ViewUser />} /> */}
-          </Route>
+          <Route path="users" element={<Users />} />
+          <Route path="users/:userId" element={<ViewUser />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
         <Route path="shoppingCart" element={<ShoppingCart />} />
