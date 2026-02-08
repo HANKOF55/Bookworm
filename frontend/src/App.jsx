@@ -13,6 +13,7 @@ import Users from "./pages/userDashBoard/Users";
 import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
 import ViewUser from "./pages/userDashBoard/ViewUser";
 import ViewBook from "./pages/userDashBoard/ViewBook";
+import BookDetails from "./pages/ShopPage/BookDetails";
 import api from "./api/axios";
 
 function App() {
@@ -52,8 +53,9 @@ function App() {
         <Route index element={<Home />} />
         <Route index path="/home" element={<Home />} />
         <Route path="shop" element={<ShopPage />} />
-        <Route path="about" element={<About />} />
-        <Route path="contact" element={<Contact />} />
+        <Route path="shop/:bookId" element={<BookDetails/>}/>
+        {/* <Route path="about" element={<About />} /> */}
+        {/* <Route path="contact" element={<Contact />} /> */}
         <Route path="userDashBoard" element={<DashboardOutlet />}>
           <Route index element={<Profile />} />
           <Route path="profile" element={<Profile />} />

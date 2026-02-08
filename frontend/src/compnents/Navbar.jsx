@@ -14,7 +14,7 @@ export default function AppNavbar() {
 
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
 
-  const navItems = ["home", "shop", "contact", "about"];
+  const navItems = ["home", "shop"];
 
   return (
     <Navbar className="w-full bg-gray-100 shadow-xl flex justify-center">
