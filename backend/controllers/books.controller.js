@@ -3,72 +3,217 @@ import mongoose from "mongoose";
 import Book from "../models/book.model.js"
 
 // local modules
-import { deleteFile } from "../services/fileUpload.service.js";
-import cloudinary from "../config/cloudinary.config.js";
+// import { uploadOnCloudinary, deleteFile } from "../services/cloudinary.service.js";
+// import { deleteFile } from "../services/cloudinary.service.js";
 
 // Admin Controllers
-export const postBook = async(req, res) => {
-    try{
-        const {title, author, description, genre, language, pages, publishedYear} = req.body;
+// export const postBook = async (req, res) => {
+//     try {
+//         const {
+//             title,
+//             author,
+//             description,
+//             genre,
+//             language,
+//             pages,
+//             publishedYear,
+//         } = req.body;
 
-        if(!title || !author || !description || !language || !pages || !publishedYear){
-            return res.status(400).json({success: false, message: "Required Fields are missing."});
-        }
+//         if (!title || !author || !description || !language || !pages || !publishedYear) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Required fields are missing.",
+//             });
+//         }
 
-        if(!req.file){
+//         if (!req.file) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Book thumbnail is required.",
+//             });
+//         }
+
+//         // parse numbers
+//         const pagesNumber = Number(pages);
+//         const publishedYearNumber = Number(publishedYear);
+
+//         if (Number.isNaN(pagesNumber) || Number.isNaN(publishedYearNumber)) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Pages and published year must be numbers.",
+//             });
+//         }
+
+//         // parse genre
+//         let parsedGenre = [];
+//         if (genre) {
+//             try {
+//                 parsedGenre = JSON.parse(genre);
+//             } catch {
+//                 parsedGenre = [];
+//             }
+//         }
+
+//         const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+//         const coverImage = cloudinaryResponse.secure_url;
+//         const coverImagePublicId = cloudinaryResponse.public_id;
+
+//         const existingBook = await Book.findOne({
+//             title,
+//             author,
+//             language,
+//             publishedYear: publishedYearNumber,
+//         });
+
+//         if (existingBook) {
+//             return res.status(409).json({ message: "Book already exists." });
+//         }
+
+//         const newBook = await Book.create({
+//             title,
+//             author,
+//             description,
+//             coverImage,
+//             coverImagePublicId,
+//             language,
+//             pages: pagesNumber,
+//             publishedYear: publishedYearNumber,
+//             genre: parsedGenre,
+//         });
+
+//         return res.status(201).json({
+//             success: true,
+//             data: newBook,
+//         });
+
+//     } catch (err) {
+//         console.error("POST BOOK ERROR 👉", err);
+//         return res.status(500).json({
+//             success: false,
+//             message: err.message || "Internal Server Error",
+//         });
+//     }
+// };
+
+export const postBook = async (req, res) => {
+    try {
+        const {
+            title,
+            author,
+            description,
+            genre,
+            language,
+            pages,
+            price,
+            publishedYear,
+            coverImage, // 👈 imageUrl coming from body
+        } = req.body;
+
+        console.log("📘 CREATE BOOK PAYLOAD 👉", {
+            title,
+            author,
+            description,
+            genre,
+            language,
+            pages,
+            price,
+            publishedYear,
+            coverImage,
+        });
+
+        if (
+            !title ||
+            !author ||
+            !description ||
+            !language ||
+            !pages ||
+            !publishedYear ||
+            !price
+        ) {
             return res.status(400).json({
                 success: false,
-                errror: {
-                    message: "Book thumbnail is required.",
-                    code: "BAD_REQUEST"
-                }
-            })
+                message: "Required fields are missing.",
+            });
         }
 
-        // Extract cloudinary data
-        const coverImage = req.file.path;        // URL
-        const coverImagePublicId = req.file.filename; // public_id
+        // parse numbers
+        const pagesNumber = Number(pages);
+        const priceNumber = Number(price);
+        const publishedYearNumber = Number(publishedYear);
+
+        if (Number.isNaN(pagesNumber) || Number.isNaN(publishedYearNumber) || Number.isNaN(priceNumber)) {
+            return res.status(400).json({
+                success: false,
+                message: "Pages, price, published year must be numbers.",
+            });
+        }
+
+        // parse genre
+        let parsedGenre = [];
+        if (genre) {
+            try {
+                parsedGenre = JSON.parse(genre);
+            } catch {
+                parsedGenre = [];
+            }
+        }
 
         const existingBook = await Book.findOne({
             title,
             author,
             language,
-            publishedYear
-          });
+            publishedYear: publishedYearNumber,
+        });
 
-        if(existingBook){
-            return res.status(409).json({message: "Book Already Exist."});
+        if (existingBook) {
+            return res.status(409).json({
+                success: false,
+                message: "Book already exists.",
+            });
         }
 
-        const newBook = await Book.create({title, author, description, coverImage : coverImage , language, pages, publishedYear, genre, coverImagePublicId});
+        const newBook = await Book.create({
+            title,
+            author,
+            description,
+            coverImage,
+            language,
+            pages: pagesNumber,
+            publishedYear: publishedYearNumber,
+            price: priceNumber,
+            genre: parsedGenre
+        });
 
         return res.status(201).json({
             success: true,
+            message: "Book created successfully.",
             data: newBook,
-        })
-        
-    } catch(err) {
+        });
+
+    } catch (err) {
+        console.error("POST BOOK ERROR 👉", err);
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error."
+            message: err.message || "Internal Server Error",
         });
     }
-}
+};
+
 
 export const updateBook = async (req, res) => {
-    try{
+    try {
         const { id } = req.params;
 
         // Validate ID
-        if(!mongoose.Types.ObjectId.isValid(id)){
+        if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
-                success: false, 
+                success: false,
                 message: "Invalid Id"
             })
         }
 
         // prevent empty updates
-        if(Object.keys(req.body).length === 0 && !req.file ){
+        if (Object.keys(req.body).length === 0 && !req.file) {
             return res.status(400).json({
                 success: false,
                 message: "No fields provided for update."
@@ -78,9 +223,9 @@ export const updateBook = async (req, res) => {
         // check if book already exist
         const existingBook = await Book.findById(id);
 
-        if(!existingBook){
+        if (!existingBook) {
             return res.status(404).json({
-                success:false,
+                success: false,
                 message: "Resource Not Found."
             })
         }
@@ -88,18 +233,18 @@ export const updateBook = async (req, res) => {
         // allowed fileds for updation
         const allowedUpdate = [
             "title",
-            "author", 
+            "author",
             "description",
             "genre",
-            "language", 
-            "pages", 
+            "language",
+            "pages",
             "publishedYear"
         ]
 
         // update all fields
         const updates = {};
-        for (const key of allowedUpdate){
-            if(req.body[key] !== undefined){
+        for (const key of allowedUpdate) {
+            if (req.body[key] !== undefined) {
                 updates[key] = req.body[key];
             }
         }
@@ -107,7 +252,7 @@ export const updateBook = async (req, res) => {
         if (req.file) {
             // delete old image ONLY if new one uploaded
             if (existingBook.coverImagePublicId) {
-              await deleteFile(existingBook.coverImagePublicId);
+                await deleteFile(existingBook.coverImagePublicId);
             }
 
             updates.coverImage = req.file.path;
@@ -116,17 +261,17 @@ export const updateBook = async (req, res) => {
 
         // Update Books
         const updatedBook = await Book.findByIdAndUpdate(
-            id, 
-            updates, 
+            id,
+            updates,
             { new: true }
         );
 
         return res.status(200).json({
-            success: true, 
+            success: true,
             data: updatedBook
         })
 
-    } catch(err){
+    } catch (err) {
         return res.status(500).json({
             success: false,
             message: "Internal Server Error."
@@ -136,12 +281,12 @@ export const updateBook = async (req, res) => {
 }
 
 export const deleteBook = async (req, res) => {
-    try{
+    try {
 
-        const { id }  = req.params;
+        const { id } = req.params;
 
         // validate id
-        if(!mongoose.Types.ObjectId.isValid(id)){
+        if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid Id"
@@ -160,7 +305,7 @@ export const deleteBook = async (req, res) => {
         // delete book image on cloudinary
         const targetBook = await Book.findById(id);
 
-        if(targetBook.coverImagePublicId) {
+        if (targetBook.coverImagePublicId) {
             await deleteFile(targetBook.coverImagePublicId);
         }
 
@@ -171,7 +316,7 @@ export const deleteBook = async (req, res) => {
         return res.status(204).end();
 
 
-    } catch(err){
+    } catch (err) {
         return res.status(500).json({
             success: false,
             message: "Internal Server Error."
@@ -181,56 +326,57 @@ export const deleteBook = async (req, res) => {
 
 // User Controllers
 
-export const getBooks = async(req, res) => {
-    
-    try{
+export const getBooks = async (req, res) => {
+
+    try {
         const page = Number(req.query.page) || 1;
         // how many pages to return: GET /api/books?page=1&limit=10
         const limit = Number(req.query.limit) || 10;
         // if skip = 10 means skip frist 10 pages
         const skip = (page - 1) * limit;
-    
-        const books = await Book.find()
-          .skip(skip)
-          .limit(limit);
 
-        
-        if(books.length === 0){
+        const books = await Book.find()
+            .skip(skip)
+            .limit(limit);
+
+
+        if (books.length === 0) {
             return res.status({
                 success: true,
                 message: "No books are registered yet.",
                 data: []
             })
         }
-    
+
         return res.status(200).json({
-          success: true,
-          count: books.length,
-          page,  //returning page to let frontend know the current page
-          data: books,
+            success: true,
+            count: books.length,
+            page,  //returning page to let frontend know the current page
+            data: books,
         });
 
-    } catch(err){
+    } catch (err) {
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error."});
+            message: "Internal Server Error."
+        });
     }
-}       
+}
 
-export const getBookById = async(req, res) => {
-    try{
+export const getBookById = async (req, res) => {
+    try {
         const { id } = req.params;
 
-        if(!mongoose.Types.ObjectId.isValid(id)){
+        if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
-                success: false, 
+                success: false,
                 message: "Invalid ID"
             })
         }
 
         const book = await Book.findById(id);
 
-        if(!book) {
+        if (!book) {
             return res.status(404).json({
                 success: false,
                 message: "Book Not Found."
@@ -238,11 +384,11 @@ export const getBookById = async(req, res) => {
         }
 
         return res.status(200).json({
-            success:true,
+            success: true,
             data: book
         })
 
-    } catch(err) {
+    } catch (err) {
         return res.status(500).json({
             success: false,
             message: "Internal Server Error."

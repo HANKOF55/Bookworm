@@ -11,6 +11,7 @@ import DashboardOutlet from "./pages/userDashBoard/DashBoardLayout";
 import EditPage from "./pages/userDashBoard/EditPage";
 import Users from "./pages/userDashBoard/Users";
 import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
+import ViewUser from "./pages/userDashBoard/ViewUser";
 import api from "./api/axios";
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
         );
       } catch (err) {
         localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
         dispatch(logout());
       }
     };
@@ -46,7 +48,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<Home/>} />
+        <Route index element={<Home />} />
         <Route index path="/home" element={<Home />} />
         <Route path="shop" element={<ShopPage />} />
         <Route path="about" element={<About />} />
@@ -57,7 +59,9 @@ function App() {
           <Route path="editProfile" element={<EditPage />} />
           <Route path="books" element={<Books />} />
           <Route path="addBook" element={<CreateBook />} />
-          <Route path="users" element={<Users />} />
+          <Route path="users" element={<Users />}>
+            {/* <Route path="/:userId" element={<ViewUser />} /> */}
+          </Route>
         </Route>
         <Route path="*" element={<NotFoundPage />} />
         <Route path="shoppingCart" element={<ShoppingCart />} />

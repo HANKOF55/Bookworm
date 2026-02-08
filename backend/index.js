@@ -14,11 +14,20 @@ import cartRouter from "./routes/cart.route.js";
 // configuration
 dotenv.config();
 const app = express();
-app.use(cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-}));
-
+// app.use(cors({
+//     origin: "http://localhost:5173",
+//     credentials: true,
+// }));
+app.use(
+    cors({
+        origin: "http://localhost:5173", // frontend URL
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+    })
+);
+// 🔥 handle preflight
+// app.options("*", cors());
 
 // middlewares
 app.use(express.json());

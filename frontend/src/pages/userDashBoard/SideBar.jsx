@@ -18,14 +18,15 @@ const SideBar = ({ menuItems }) => {
     setError(null);
 
     try {
-      
+
       try {
-        await api.post("/user/logout", {}); 
+        await api.post("/user/logout", {});
       } catch (err) {
       }
 
       // Remove token and Redux state
       localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
       dispatch(logout());
       navigate("/home");
     } catch (err) {
@@ -44,13 +45,12 @@ const SideBar = ({ menuItems }) => {
             key={index}
             to={item.path}
             className={({ isActive }) =>
-              `block w-full text-md font-semibold p-2 py-1 rounded-md text-center hover:bg-gray-700 transition ${
-                isActive
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-700 text-gray-200"
+              `block w-full text-md font-semibold p-2 py-1 rounded-md text-center hover:bg-gray-700 transition ${isActive
+                ? "bg-gray-900 text-white"
+                : "bg-gray-700 text-gray-200"
               }`
             }
-            // style={{ textAlign: "center" }}
+          // style={{ textAlign: "center" }}
           >
             {item.name}
           </NavLink>

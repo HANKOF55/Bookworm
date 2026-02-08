@@ -388,7 +388,7 @@ export const getAllUsers = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            users: allUsers,
+            data: allUsers,
         })
 
 
