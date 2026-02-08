@@ -102,7 +102,7 @@ const ShoppingCart = () => {
     setCartItems([]);
 
     try {
-      const response = await api.delete("/cart/clear");
+      const response = await api.delete("/cart/");
       const result = response.data;
       if (!result.success) {
         throw new Error("Failed to clear cart.");
