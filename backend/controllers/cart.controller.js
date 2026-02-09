@@ -43,10 +43,6 @@ export const getMyCart = async (req, res) => {
 
 export const postCartItem = async (req, res) => {
     try {
-
-        console.log("HEADERS 👉", req.headers["content-type"]);
-        console.log("BODY 👉", req.body);
-
         const payload = req.payloadData;
 
         if (!payload?.id) {
@@ -127,7 +123,7 @@ export const postCartItem = async (req, res) => {
         return res.status(200).json({ success: true, data: cart });
 
     } catch (err) {
-        console.error("🔥 ADD TO CART ERROR:", err);
+        console.error("ADD TO CART ERROR:", err);
         return res.status(500).json({
             success: false,
             error: { message: "Internal server error", code: "INTERNAL_SERVER_ERROR" }

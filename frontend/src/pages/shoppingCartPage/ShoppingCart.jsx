@@ -114,7 +114,6 @@ const ShoppingCart = () => {
     }
   };
 
-  // NEW: handleCheckout now works for complete cart, not a single product
   const handleCheckout = async () => {
     try {
       if (cartItems.length === 0) {

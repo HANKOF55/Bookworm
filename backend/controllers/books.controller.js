@@ -106,20 +106,9 @@ export const postBook = async (req, res) => {
             pages,
             price,
             publishedYear,
-            coverImage, // 👈 imageUrl coming from body
+            coverImage,
         } = req.body;
 
-        console.log("📘 CREATE BOOK PAYLOAD 👉", {
-            title,
-            author,
-            description,
-            genre,
-            language,
-            pages,
-            price,
-            publishedYear,
-            coverImage,
-        });
 
         if (
             !title ||
@@ -191,7 +180,7 @@ export const postBook = async (req, res) => {
         });
 
     } catch (err) {
-        console.error("POST BOOK ERROR 👉", err);
+        console.error("POST BOOK ERROR ", err);
         return res.status(500).json({
             success: false,
             message: err.message || "Internal Server Error",

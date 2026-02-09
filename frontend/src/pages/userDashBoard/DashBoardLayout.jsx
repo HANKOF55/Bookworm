@@ -17,7 +17,7 @@ const DashBoardLayout = () => {
   // Menu items
   const userSettings = [
     { name: "Profile", path: "/userDashBoard/profile" },
-    { name: "Edit Profile", path: "/userDashBoard/editProfile" },
+    // { name: "Edit Profile", path: "/userDashBoard/editProfile" },
   ];
 
   const adminSettings = [

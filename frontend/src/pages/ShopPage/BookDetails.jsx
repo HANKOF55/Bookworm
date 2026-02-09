@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { handleAddToCart } from "../shoppingCartPage/handleAddToCart";
 import api from '../../api/axios';
 
 const BookDetails = () => {
@@ -256,8 +257,8 @@ const BookDetails = () => {
                   Add to Cart
                 </button>
                 <button
-                  onClick={handleBuyNow}
-                  className="flex-1 px-8 py-3 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+                  onClick={() => handleAddToCart(bookId)}
+                  className="flex-1 px-8 py-3 bg-gray-900 hover:cursor-pointer active:bg-gray-700 active:text-white text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors"
                   disabled={typeof price !== "number"}
                   title={typeof price === "number" ? "Buy Now" : "Unavailable"}
                 >

@@ -85,8 +85,6 @@ export const loginUser = async (req, res) => {
 
         const emailNormalized = email.toLowerCase();
 
-        // Explicitly select password so password is present for comparison,
-        // select name and role to send to client, exclude __v and other unnecessary fields.
         const user = await User.findOne({ email: emailNormalized }).select("+password name role email");
 
         if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -547,7 +545,6 @@ export const updateUserById = async (req, res) => {
 
     const { avatar, name, email, role } = req.body;
 
-    // ✅ Validate target user ID
     if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
       return res.status(400).json({
         success: false,
