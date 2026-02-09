@@ -69,25 +69,6 @@ const ProductSection = () => {
   }, [page]);
 
 
-  // const handleAddToCart = async (bookId) => {
-  //   try {
-  //     const res = await api.post("/cart", {
-  //       bookId,
-  //       quantity: 1
-  //     });
-  
-  //     if (res.data?.success) {
-  //       console.log("Added to cart", res.data.data);
-  //     }
-  //   } catch (err) {
-  //     console.error(
-  //       err.response?.data?.error?.message ||
-  //       "Failed to add item to cart"
-  //     );
-  //   }
-  // };
-  
-
 
   return (
     <>

@@ -23,7 +23,7 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 app.use(
     cors({
-        origin: "http://localhost:5173", // frontend URL
+        origin: `${process.env.CLIENT_URL}`, // frontend URL
         credentials: true,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
